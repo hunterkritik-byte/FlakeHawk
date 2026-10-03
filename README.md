@@ -45,7 +45,7 @@ go vet ./...
 Analyze a single report:
 
 ```bash
-./flakehawk report ./tests/testdata/results.xml
+./flakehawk report ./tests/testdata/flaky.xml
 ```
 
 Analyze a directory:
