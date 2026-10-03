@@ -16,20 +16,14 @@ var version = "dev"
 
 func main() {
 	args := os.Args[1:]
-\t// Some Termux launchers/wrappers can prepend the executable path to argv.
-\t// Accept both normal argv and the wrapped form without changing CLI behavior.
-\tif len(args) > 0 && strings.HasSuffix(args[0], "flakehawk") {
-\t\targs = args[1:]
-\t}
-\tif len(args) < 1 { usage(); os.Exit(2) }
+	if len(args) == 0 { usage(); os.Exit(2) }
 	switch args[0] {
 	case "report": reportCmd(args[1:])
 	case "ingest": ingestCmd(args[1:])
 	case "version": fmt.Println("flakehawk", version)
 	case "help", "-h", "--help": usage()
 	default:
-		fmt.Fprintf(os.Stderr, "unknown command %q
-", os.Args[1])
+		fmt.Fprintf(os.Stderr, "unknown command %q\n", args[0])
 		usage()
 		os.Exit(2)
 	}
@@ -62,28 +56,20 @@ func ingestCmd(args []string) {
 	attempt := fs.Int("attempt", 0, "CI attempt; defaults to GITHUB_RUN_ATTEMPT or 1")
 	_ = fs.Parse(args)
 	if fs.NArg() != 1 { fmt.Fprintln(os.Stderr, "usage: flakehawk ingest [flags] <junit-file-or-directory>"); os.Exit(2) }
-
 	meta := ingest.MetadataFromEnv()
 	if *commit != "" { meta.CommitSHA = *commit }
 	if *branch != "" { meta.Branch = *branch }
 	if *runner != "" { meta.Runner = *runner }
 	if *attempt > 0 { meta.Attempt = *attempt }
-
 	record, err := ingest.ParseAndEnrich(fs.Arg(0), meta)
 	if err != nil { fmt.Fprintln(os.Stderr, "error:", err); os.Exit(1) }
 	added, err := ingest.AppendUnique(*output, record)
 	if err != nil { fmt.Fprintln(os.Stderr, "error:", err); os.Exit(1) }
-	if added {
-		fmt.Printf("ingested run %s (%d executions)
-", record.RunID[:12], len(record.Executions))
-	} else {
-		fmt.Printf("duplicate run ignored: %s
-", record.RunID[:12])
-	}
+	if added { fmt.Printf("ingested run %s (%d executions)\n", record.RunID[:12], len(record.Executions)) } else { fmt.Printf("duplicate run ignored: %s\n", record.RunID[:12]) }
 }
 
 func usage() {
-	fmt.Println(strings.TrimSpace("FlakeHawk - explainable flaky test detection
+	fmt.Println(strings.TrimSpace(`FlakeHawk - explainable flaky test detection
 
 Usage:
   flakehawk report [flags] <file-or-directory>
@@ -95,5 +81,5 @@ Ingest flags:
   -branch   Branch/ref name
   -runner   Runner identity
   -attempt  CI attempt number
-  -output   JSONL ingestion store (default .flakehawk/runs.jsonl)"))
+  -output   JSONL ingestion store (default .flakehawk/runs.jsonl)`))
 }
