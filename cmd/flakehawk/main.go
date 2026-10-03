@@ -15,10 +15,10 @@ import (
 var version = "dev"
 
 func main() {
-	if len(os.Args) < 2 { usage(); os.Exit(2) }
-	switch os.Args[1] {
-	case "report": reportCmd(os.Args[2:])
-	case "ingest": ingestCmd(os.Args[2:])
+	args := os.Args[1:]\n\t// Some Termux launchers/wrappers can prepend the executable path to argv.\n\t// Accept both normal argv and the wrapped form without changing CLI behavior.\n\tif len(args) > 0 && strings.HasSuffix(args[0], "flakehawk") {\n\t\targs = args[1:]\n\t}\n\tif len(args) < 1 { usage(); os.Exit(2) }
+	switch args[0] {
+	case "report": reportCmd(args[1:])
+	case "ingest": ingestCmd(args[1:])
 	case "version": fmt.Println("flakehawk", version)
 	case "help", "-h", "--help": usage()
 	default:
