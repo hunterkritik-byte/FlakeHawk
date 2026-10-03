@@ -1,5 +1,5 @@
 name: FlakeHawk
-description: Analyze JUnit reports for explainable flaky-test signals.
+description: Ingest JUnit reports with GitHub Actions metadata.
 branding:
   icon: activity
   color: purple
@@ -8,12 +8,12 @@ inputs:
   reports:
     description: File or directory containing JUnit XML reports.
     required: true
-  min-runs:
-    description: Minimum executions before a test is reported.
+  output:
+    description: JSONL ingestion store path.
     required: false
-    default: "5"
+    default: .flakehawk/runs.jsonl
   version:
-    description: Release tag to install, or latest.
+    description: Release tag to install.
     required: false
     default: latest
 
@@ -37,14 +37,16 @@ runs:
           ARM64) arch=arm64 ;;
           *) echo "Unsupported runner architecture: $RUNNER_ARCH" >&2; exit 1 ;;
         esac
-        if [ "$VERSION" = "latest" ]; then tag="latest"; else tag="$VERSION"; fi
-        base="https://github.com/hunterkritik-byte/FlakeHawk/releases"
-        asset="flakehawk_"$os"_"$arch".tar.gz"
-        if [ "$tag" = "latest" ]; then url="$base/latest/download/$asset"; else url="$base/download/$tag/$asset"; fi
+        asset="flakehawk_${os}_${arch}.tar.gz"
+        if [ "$VERSION" = "latest" ]; then
+          url="https://github.com/hunterkritik-byte/FlakeHawk/releases/latest/download/$asset"
+        else
+          url="https://github.com/hunterkritik-byte/FlakeHawk/releases/download/$VERSION/$asset"
+        fi
         mkdir -p "$RUNNER_TEMP/flakehawk"
         curl -fsSL "$url" -o "$RUNNER_TEMP/flakehawk.tar.gz"
         tar -xzf "$RUNNER_TEMP/flakehawk.tar.gz" -C "$RUNNER_TEMP/flakehawk"
         echo "$RUNNER_TEMP/flakehawk" >> "$GITHUB_PATH"
-    - name: Analyze reports
+    - name: Ingest JUnit reports
       shell: bash
-      run: flakehawk report --min-runs "${{ inputs.min-runs }}" "${{ inputs.reports }}"
+      run: flakehawk ingest --output "${{ inputs.output }}" "${{ inputs.reports }}"
