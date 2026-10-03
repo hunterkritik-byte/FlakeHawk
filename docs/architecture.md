@@ -1,34 +1,31 @@
 # FlakeHawk Architecture
 
-FlakeHawk separates ingestion, normalization, detection, storage, and presentation.
+## Phase 2: CI ingestion
 
-```mermaid
-flowchart LR
-    A[JUnit XML] --> B[JUnit Parser]
-    B --> C[TestExecution]
-    C --> D[Detector]
-    D --> E[FlakeAssessment]
-    E --> F[CLI / JSON]
-    C --> G[(PostgreSQL)]
-    G --> H[Go API]
-    H --> I[Dashboard]
-    J[GitHub Action] --> A
-```
+CI reports enter through the JUnit parser and are enriched with execution metadata before being persisted to an append-only JSONL ingestion store.
 
-## Detection signals
+Flow: GitHub Actions -> JUnit XML -> flakehawk ingest -> metadata adapter -> run identity -> duplicate check -> JSONL store -> detector.
 
-### Same-commit disagreement
+## GitHub Actions metadata
 
-The same test has both a pass and a failure for one commit SHA. This is strong evidence of nondeterminism, but only when commit metadata is trustworthy.
+When flakehawk ingest runs inside GitHub Actions it reads:
+- GITHUB_SHA -> commit SHA
+- GITHUB_REF_NAME or GITHUB_HEAD_REF -> branch/ref
+- RUNNER_OS + RUNNER_ARCH -> runner identity
+- GITHUB_RUN_ATTEMPT -> retry attempt
 
-### Retry-pass
+Every parsed execution receives those values.
 
-A failed attempt is followed by a successful retry. This is evidence, not proof: transient infrastructure problems can create the same pattern.
+CLI flags override environment-derived values, which makes local replay and other CI providers possible.
 
-### Confidence
+## Duplicate-run protection
 
-The MVP exposes its inputs instead of hiding them behind an opaque ML score. Sample size is incorporated using a Wilson lower bound, with explicit evidence bonuses for retry-pass and same-SHA disagreement.
+A run ID is a SHA-256 digest of the JUnit report bytes plus commit, branch, runner, and attempt metadata.
 
-## Automation policy
+The JSONL store is append-only. Before writing a record, FlakeHawk scans existing run IDs and ignores an exact duplicate.
 
-Automatic quarantine is not enabled by default. Detection should produce evidence first; any future automation should be policy-driven, reversible, owned, and time-limited.
+This protects against a workflow accidentally uploading the same report twice. A future PostgreSQL backend should enforce the same invariant with a unique constraint.
+
+## Design note
+
+The JSONL store is intentionally dependency-free for this phase. PostgreSQL remains the persistent multi-run backend planned for the next storage phase.
