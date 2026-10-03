@@ -78,9 +78,9 @@ See [docs/architecture.md](docs/architecture.md).
 
 ### Phase 2 — CI ingestion
 - [ ] `flakehawk ingest`
-- [ ] Commit/branch/runner/attempt metadata
-- [ ] GitHub Actions metadata adapter
-- [ ] Duplicate-run protection
+- [x] Commit/branch/runner/attempt metadata
+- [x] GitHub Actions metadata adapter
+- [x] Duplicate-run protection
 
 ### Phase 3 — Persistent analytics
 - [x] PostgreSQL schema
