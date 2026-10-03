@@ -22,8 +22,7 @@ func main() {
 	case "version": fmt.Println("flakehawk", version)
 	case "help", "-h", "--help": usage()
 	default:
-		fmt.Fprintf(os.Stderr, "unknown command %q
-", os.Args[1])
+		fmt.Fprintf(os.Stderr, "unknown command %q\n", os.Args[1])
 		usage()
 		os.Exit(2)
 	}
@@ -68,26 +67,12 @@ func ingestCmd(args []string) {
 	added, err := ingest.AppendUnique(*output, record)
 	if err != nil { fmt.Fprintln(os.Stderr, "error:", err); os.Exit(1) }
 	if added {
-		fmt.Printf("ingested run %s (%d executions)
-", record.RunID[:12], len(record.Executions))
+		fmt.Printf("ingested run %s (%d executions)\n", record.RunID[:12], len(record.Executions))
 	} else {
-		fmt.Printf("duplicate run ignored: %s
-", record.RunID[:12])
+		fmt.Printf("duplicate run ignored: %s\n", record.RunID[:12])
 	}
 }
 
 func usage() {
-	fmt.Println(strings.TrimSpace("FlakeHawk - explainable flaky test detection
-
-Usage:
-  flakehawk report [flags] <file-or-directory>
-  flakehawk ingest [flags] <junit-file-or-directory>
-  flakehawk version
-
-Ingest flags:
-  -commit   Commit SHA
-  -branch   Branch/ref name
-  -runner   Runner identity
-  -attempt  CI attempt number
-  -output   JSONL ingestion store (default .flakehawk/runs.jsonl)"))
+	fmt.Println(strings.TrimSpace("FlakeHawk - explainable flaky test detection\n\nUsage:\n  flakehawk report [flags] <file-or-directory>\n  flakehawk ingest [flags] <junit-file-or-directory>\n  flakehawk version\n\nIngest flags:\n  -commit   Commit SHA\n  -branch   Branch/ref name\n  -runner   Runner identity\n  -attempt  CI attempt number\n  -output   JSONL ingestion store (default .flakehawk/runs.jsonl)"))
 }
