@@ -1,0 +1,10 @@
+<testsuites>
+  <testsuite name="ci" timestamp="2026-10-03T10:00:00Z">
+    <testcase classname="Checkout" name="TestTimeout" file="checkout_test.go" time="0.20"/>
+    <testcase classname="Checkout" name="TestTimeout" file="checkout_test.go" time="0.20"><failure message="timeout"/></testcase>
+    <testcase classname="Checkout" name="TestTimeout" file="checkout_test.go" time="0.20"/>
+    <testcase classname="Checkout" name="TestTimeout" file="checkout_test.go" time="0.20"/>
+    <testcase classname="Checkout" name="TestTimeout" file="checkout_test.go" time="0.20"><failure message="timeout"/></testcase>
+    <testcase classname="Checkout" name="TestTimeout" file="checkout_test.go" time="0.20"/>
+  </testsuite>
+</testsuites>
