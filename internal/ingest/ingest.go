@@ -5,8 +5,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/hunterkritik-byte/FlakeHawk/internal/model"
@@ -49,7 +51,10 @@ func AppendUnique(path string, record Record) (bool, error) {
 		dec := json.NewDecoder(existing)
 		for {
 			var r Record
-			if err := dec.Decode(&r); err != nil { break }
+			if err := dec.Decode(&r); err != nil {
+				if err != io.EOF { return false, fmt.Errorf("decode ingest store: %w", err) }
+				break
+			}
 			if r.RunID == record.RunID { return false, nil }
 		}
 	} else if !os.IsNotExist(err) {
@@ -63,12 +68,37 @@ func AppendUnique(path string, record Record) (bool, error) {
 }
 
 func runID(path string, meta Metadata) (string, error) {
-	data, err := os.ReadFile(path)
-	if err != nil { return "", fmt.Errorf("read report for run identity: %w", err) }
 	h := sha256.New()
-	h.Write(data)
+	info, err := os.Stat(path)
+	if err != nil { return "", fmt.Errorf("stat report path: %w", err) }
+
+	if info.IsDir() {
+		var files []string
+		err = filepath.Walk(path, func(p string, info os.FileInfo, walkErr error) error {
+			if walkErr != nil { return walkErr }
+			if info.IsDir() || !strings.HasSuffix(strings.ToLower(info.Name()), ".xml") { return nil }
+			files = append(files, p)
+			return nil
+		})
+		if err != nil { return "", fmt.Errorf("enumerate reports: %w", err) }
+		sort.Strings(files)
+		for _, p := range files {
+			if err := hashFile(h, p); err != nil { return "", err }
+		}
+	} else {
+		if err := hashFile(h, path); err != nil { return "", err }
+	}
+
 	fmt.Fprintf(h, "\x00%s\x00%s\x00%s\x00%d", meta.CommitSHA, meta.Branch, meta.Runner, meta.Attempt)
 	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
+func hashFile(h io.Writer, path string) error {
+	f, err := os.Open(path)
+	if err != nil { return fmt.Errorf("open report for run identity: %w", err) }
+	defer f.Close()
+	if _, err := io.Copy(h, f); err != nil { return fmt.Errorf("hash report: %w", err) }
+	return nil
 }
 
 func MetadataFromEnv() Metadata {
