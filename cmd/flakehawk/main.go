@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/hunterkritik-byte/FlakeHawk/internal/detector"
@@ -16,6 +17,11 @@ var version = "dev"
 
 func main() {
 	args := os.Args[1:]
+	// Some Android/Termux launch wrappers prepend the executable path as an
+	// argument. Treat that path as argv[0], not as the requested subcommand.
+	if len(args) > 0 && filepath.Base(args[0]) == "flakehawk" {
+		args = args[1:]
+	}
 	if len(args) == 0 { usage(); os.Exit(2) }
 	switch args[0] {
 	case "report": reportCmd(args[1:])
