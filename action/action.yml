@@ -1,0 +1,50 @@
+name: FlakeHawk
+description: Analyze JUnit reports for explainable flaky-test signals.
+branding:
+  icon: activity
+  color: purple
+
+inputs:
+  reports:
+    description: File or directory containing JUnit XML reports.
+    required: true
+  min-runs:
+    description: Minimum executions before a test is reported.
+    required: false
+    default: "5"
+  version:
+    description: Release tag to install, or latest.
+    required: false
+    default: latest
+
+runs:
+  using: composite
+  steps:
+    - name: Install FlakeHawk
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        case "$RUNNER_OS" in
+          Linux) os=linux ;;
+          macOS) os=darwin ;;
+          Windows) os=windows ;;
+          *) echo "Unsupported runner OS: $RUNNER_OS" >&2; exit 1 ;;
+        esac
+        case "$RUNNER_ARCH" in
+          X64) arch=amd64 ;;
+          ARM64) arch=arm64 ;;
+          *) echo "Unsupported runner architecture: $RUNNER_ARCH" >&2; exit 1 ;;
+        esac
+        if [ "$VERSION" = "latest" ]; then tag="latest"; else tag="$VERSION"; fi
+        base="https://github.com/hunterkritik-byte/FlakeHawk/releases"
+        asset="flakehawk_"$os"_"$arch".tar.gz"
+        if [ "$tag" = "latest" ]; then url="$base/latest/download/$asset"; else url="$base/download/$tag/$asset"; fi
+        mkdir -p "$RUNNER_TEMP/flakehawk"
+        curl -fsSL "$url" -o "$RUNNER_TEMP/flakehawk.tar.gz"
+        tar -xzf "$RUNNER_TEMP/flakehawk.tar.gz" -C "$RUNNER_TEMP/flakehawk"
+        echo "$RUNNER_TEMP/flakehawk" >> "$GITHUB_PATH"
+    - name: Analyze reports
+      shell: bash
+      run: flakehawk report --min-runs "${{ inputs.min-runs }}" "${{ inputs.reports }}"
