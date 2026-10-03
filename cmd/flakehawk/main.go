@@ -15,14 +15,21 @@ import (
 var version = "dev"
 
 func main() {
-	args := os.Args[1:]\n\t// Some Termux launchers/wrappers can prepend the executable path to argv.\n\t// Accept both normal argv and the wrapped form without changing CLI behavior.\n\tif len(args) > 0 && strings.HasSuffix(args[0], "flakehawk") {\n\t\targs = args[1:]\n\t}\n\tif len(args) < 1 { usage(); os.Exit(2) }
+	args := os.Args[1:]
+\t// Some Termux launchers/wrappers can prepend the executable path to argv.
+\t// Accept both normal argv and the wrapped form without changing CLI behavior.
+\tif len(args) > 0 && strings.HasSuffix(args[0], "flakehawk") {
+\t\targs = args[1:]
+\t}
+\tif len(args) < 1 { usage(); os.Exit(2) }
 	switch args[0] {
 	case "report": reportCmd(args[1:])
 	case "ingest": ingestCmd(args[1:])
 	case "version": fmt.Println("flakehawk", version)
 	case "help", "-h", "--help": usage()
 	default:
-		fmt.Fprintf(os.Stderr, "unknown command %q\n", os.Args[1])
+		fmt.Fprintf(os.Stderr, "unknown command %q
+", os.Args[1])
 		usage()
 		os.Exit(2)
 	}
@@ -67,12 +74,26 @@ func ingestCmd(args []string) {
 	added, err := ingest.AppendUnique(*output, record)
 	if err != nil { fmt.Fprintln(os.Stderr, "error:", err); os.Exit(1) }
 	if added {
-		fmt.Printf("ingested run %s (%d executions)\n", record.RunID[:12], len(record.Executions))
+		fmt.Printf("ingested run %s (%d executions)
+", record.RunID[:12], len(record.Executions))
 	} else {
-		fmt.Printf("duplicate run ignored: %s\n", record.RunID[:12])
+		fmt.Printf("duplicate run ignored: %s
+", record.RunID[:12])
 	}
 }
 
 func usage() {
-	fmt.Println(strings.TrimSpace("FlakeHawk - explainable flaky test detection\n\nUsage:\n  flakehawk report [flags] <file-or-directory>\n  flakehawk ingest [flags] <junit-file-or-directory>\n  flakehawk version\n\nIngest flags:\n  -commit   Commit SHA\n  -branch   Branch/ref name\n  -runner   Runner identity\n  -attempt  CI attempt number\n  -output   JSONL ingestion store (default .flakehawk/runs.jsonl)"))
+	fmt.Println(strings.TrimSpace("FlakeHawk - explainable flaky test detection
+
+Usage:
+  flakehawk report [flags] <file-or-directory>
+  flakehawk ingest [flags] <junit-file-or-directory>
+  flakehawk version
+
+Ingest flags:
+  -commit   Commit SHA
+  -branch   Branch/ref name
+  -runner   Runner identity
+  -attempt  CI attempt number
+  -output   JSONL ingestion store (default .flakehawk/runs.jsonl)"))
 }
